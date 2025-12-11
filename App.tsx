@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Upload, Camera, ArrowRight, Wand2, Sparkles, SlidersHorizontal, Image as ImageIcon, Plus, X, Trash2, AlertCircle, RefreshCw, Dice5, Save, FolderOpen, Calendar, Clock, Download, FileImage, Columns, ChevronDown, Calculator, DollarSign, ScanEye, CheckCircle2, XCircle, Lightbulb, MoveRight, Palette, FileText, Settings, Globe, Moon, Sun, Map, HelpCircle, Pencil, Heart, MessageSquareText } from 'lucide-react';
+import { Upload, Camera, ArrowRight, Wand2, Sparkles, SlidersHorizontal, Image as ImageIcon, Plus, X, Trash2, AlertCircle, RefreshCw, Dice5, Save, FolderOpen, Calendar, Clock, Download, FileImage, Columns, ChevronDown, Calculator, DollarSign, ScanEye, CheckCircle2, XCircle, Lightbulb, MoveRight, Palette, FileText, Settings, Globe, Moon, Sun, Map, HelpCircle, Pencil, Heart, MessageSquareText, Ruler, Wallet, Banknote } from 'lucide-react';
 import { Message, DesignStyle, ShoppableItem, SavedDesign, BudgetEstimate, RoomAnalysis } from './types';
 import CompareSlider from './components/CompareSlider';
 import StyleCarousel from './components/StyleCarousel';
@@ -13,8 +13,8 @@ import BudgetModal from './components/BudgetModal';
 import FloorPlanModal from './components/FloorPlanModal';
 import HelpModal from './components/HelpModal';
 import RoomTypeModal from './components/RoomTypeModal'; 
-import RoomDetectionLoader from './components/RoomDetectionLoader'; // Import the new loader
-import { generateRoomDesign, editRoomDesign, createChatSession, analyzeRoomDesign, generateFloorPlan, detectRoomType } from './services/geminiService';
+import RoomDetectionLoader from './components/RoomDetectionLoader'; 
+import { generateRoomDesign, editRoomDesign, createChatSession, analyzeRoomDesign, generateFloorPlan, detectRoomType, getQuickRoomInsights } from './services/geminiService';
 import { extractPalette } from './utils/colorUtils';
 import { downloadImage, createComparisonCollage } from './utils/downloadUtils';
 import { generatePDFReport } from './utils/reportUtils';
@@ -52,6 +52,10 @@ const App: React.FC = () => {
   const [isGeneratingFloorPlan, setIsGeneratingFloorPlan] = useState(false);
   const [floorPlanImage, setFloorPlanImage] = useState<string | null>(null);
   const [isFloorPlanModalOpen, setIsFloorPlanModalOpen] = useState(false);
+
+  // New Project Parameters
+  const [projectBudget, setProjectBudget] = useState<string>('');
+  const [floorPlanScale, setFloorPlanScale] = useState<string>('1:100');
 
   // Budget State
   const [budgetEstimateResult, setBudgetEstimateResult] = useState<BudgetEstimate | null>(null);
@@ -92,7 +96,7 @@ const App: React.FC = () => {
   // Initialize Chat Session on Mount & Load Saved Designs
   useEffect(() => {
     // Initial creation of chat session
-    chatSessionRef.current = createChatSession(undefined, language);
+    chatSessionRef.current = createChatSession(undefined, language, projectBudget);
     
     // Load saved designs
     try {
@@ -134,9 +138,9 @@ const App: React.FC = () => {
         parts: [{ text: m.text }]
     }));
 
-    chatSessionRef.current = createChatSession(history, language);
+    chatSessionRef.current = createChatSession(history, language, projectBudget);
 
-  }, [language]);
+  }, [language, projectBudget]); // Also recreate if budget changes
 
 
   // Update palette when generated image changes
@@ -186,9 +190,10 @@ const App: React.FC = () => {
              setFloorPlanImage(null); // Reset floor plan
              setDetectedRoomType(null); // Reset room type
              setIsImageConfirmed(false); // Reset confirmation state
+             setProjectBudget(''); // Reset budget on new image
              
              // Reset chat session on new upload with current language
-             chatSessionRef.current = createChatSession(undefined, language);
+             chatSessionRef.current = createChatSession(undefined, language, projectBudget);
 
              // Immediately detect room type
              setIsDetectingRoom(true);
@@ -226,12 +231,26 @@ const App: React.FC = () => {
     setDetectedRoomType(null);
     setIsImageConfirmed(false);
     setIsRoomTypeModalOpen(false);
+    setProjectBudget('');
     setChatMessages([{ role: 'model', text: t('chat.ready') }]);
     chatSessionRef.current = createChatSession(undefined, language);
   };
 
-  const handleConfirmImage = () => {
+  const handleConfirmImage = async () => {
       setIsImageConfirmed(true);
+      
+      // TRIGGER AUTO-ANALYSIS (Quick Insights)
+      if (originalImage) {
+          try {
+             const insights = await getQuickRoomInsights(originalImage, detectedRoomType || "Room");
+             setChatMessages(prev => [...prev, { 
+                 role: 'model', 
+                 text: `${t('analysis.autoInsight')}${insights}` 
+             }]);
+          } catch (e) {
+              console.error("Quick analysis failed", e);
+          }
+      }
   };
 
   const handleSaveEdit = (newImage: string) => {
@@ -288,8 +307,8 @@ const App: React.FC = () => {
 
       setIsGeneratingFloorPlan(true);
       try {
-          // Pass the known room type to helper function
-          const result = await generateFloorPlan(originalImage, detectedRoomType || undefined);
+          // Pass the known room type AND scale to helper function
+          const result = await generateFloorPlan(originalImage, detectedRoomType || undefined, floorPlanScale);
           setFloorPlanImage(result);
           setIsFloorPlanModalOpen(true);
       } catch (error) {
@@ -376,6 +395,7 @@ const App: React.FC = () => {
       setBudgetEstimateResult(design.budgetEstimate || null);
       setFloorPlanImage(null); // Saved designs don't currently support floor plan storage in type, so reset
       setDetectedRoomType(null); // Reset room type on load as it isn't saved in schema yet
+      setProjectBudget(''); // Reset budget
       
       setIsImageConfirmed(true); // Auto confirm loaded designs
 
@@ -435,8 +455,8 @@ const App: React.FC = () => {
     setIsGenerating(true);
     
     try {
-      // Pass the detected room type to the service
-      const result = await generateRoomDesign(originalImage, style, detectedRoomType || undefined);
+      // Pass the detected room type AND BUDGET to the service
+      const result = await generateRoomDesign(originalImage, style, detectedRoomType || undefined, projectBudget);
       setGeneratedImage(result);
       setStylePreviews(prev => ({ ...prev, [style]: result }));
       setChatMessages(prev => [...prev, { role: 'model', text: `Here is your ${detectedRoomType || 'room'} reimagined in ${style} style! You can use the slider to compare, or chat with me to adjust specifics like colors or furniture.` }]);
@@ -991,6 +1011,46 @@ const App: React.FC = () => {
                                 )}
                             </div>
                         </div>
+
+                        {/* Project Parameters (Budget & Scale) */}
+                         <div className="grid grid-cols-2 gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-100 dark:border-slate-800">
+                             <div>
+                                 <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                                    <Banknote size={12} /> {t('project.budgetLabel')}
+                                 </label>
+                                 <div className="relative">
+                                    <input 
+                                        type="text" 
+                                        value={projectBudget}
+                                        onChange={(e) => setProjectBudget(e.target.value)}
+                                        placeholder={t('project.budgetPlaceholder')}
+                                        className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 pl-8 transition-colors"
+                                    />
+                                    <Banknote size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                                 </div>
+                             </div>
+                             <div>
+                                 <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                                    <Ruler size={12} /> {t('project.scaleLabel')}
+                                 </label>
+                                 <div className="relative">
+                                     <input
+                                        type="text"
+                                        value={floorPlanScale}
+                                        onChange={(e) => setFloorPlanScale(e.target.value)}
+                                        placeholder={t('project.scalePlaceholder')}
+                                        list="scale-options"
+                                        className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+                                     />
+                                     <datalist id="scale-options">
+                                         <option value="1:50" />
+                                         <option value="1:100" />
+                                         <option value="1:200" />
+                                     </datalist>
+                                 </div>
+                             </div>
+                         </div>
+
                         <StyleCarousel 
                             onSelectStyle={handleStyleSelect} 
                             selectedStyle={selectedStyle} 

@@ -66,10 +66,43 @@ export const detectRoomType = async (imageBase64: string): Promise<string> => {
   }
 };
 
+// New Function: Quick Analysis for Chat
+export const getQuickRoomInsights = async (imageBase64: string, roomType: string): Promise<string> => {
+  try {
+    const prompt = `Act as an expert interior architect. Briefly scan this ${roomType}.
+    Provide a concise 3-bullet point summary of the CURRENT state focusing on:
+    1. Natural Lighting quality.
+    2. Current layout efficiency.
+    3. One immediate opportunity for improvement.
+    
+    Keep it conversational, helpful, and under 60 words. No markdown formatting like bold/italics.`;
+
+    const response = await ai.models.generateContent({
+      model: ANALYSIS_MODEL,
+      contents: {
+        parts: [
+          {
+            inlineData: {
+              mimeType: 'image/jpeg',
+              data: imageBase64.split(',')[1],
+            },
+          },
+          { text: prompt },
+        ],
+      },
+    });
+    return response.text || "I've analyzed your room and I'm ready to help you redesign it.";
+  } catch (error) {
+    console.error("Quick Analysis Error", error);
+    return "I'm ready to help you redesign this room.";
+  }
+};
+
 export const generateRoomDesign = async (
   imageBase64: string,
   style: string,
-  providedRoomType?: string
+  providedRoomType?: string,
+  budget?: string // New Parameter
 ): Promise<string> => {
   try {
     // Use provided type if available, otherwise detect (fallback)
@@ -77,7 +110,7 @@ export const generateRoomDesign = async (
     const finalRoomType = roomType === "Unknown" ? "Room" : roomType;
 
     // Step 2: Generate Design with context
-    const prompt = `Redesign this ${finalRoomType} in a ${style} style. 
+    let prompt = `Redesign this ${finalRoomType} in a ${style} style. 
     
     CRITICAL INSTRUCTIONS:
     1. **Functionality**: This is a ${finalRoomType}. Maintain its specific function.
@@ -86,6 +119,12 @@ export const generateRoomDesign = async (
     3. **Structure**: Keep walls, windows, and ceiling strictly exactly the same.
     4. **Aesthetic**: Change furniture, decor, textures, and lighting to match ${style}.
     5. **Quality**: High quality, photorealistic, interior design photography.`;
+
+    // Inject Budget Constraint if provided
+    if (budget) {
+        prompt += `\n6. **Budget Constraint**: The client has a renovation budget of approximately ${budget}. 
+        Ensure materials and furniture choices look achievable within this price range (e.g. if low budget, use IKEA-style/simple items; if high budget, use luxury finishes).`;
+    }
 
     const response = await ai.models.generateContent({
       model: GENERATION_MODEL,
@@ -150,7 +189,11 @@ export const editRoomDesign = async (
   }
 };
 
-export const generateFloorPlan = async (imageBase64: string, providedRoomType?: string): Promise<string> => {
+export const generateFloorPlan = async (
+    imageBase64: string, 
+    providedRoomType?: string, 
+    scale?: string // New Parameter
+): Promise<string> => {
   try {
      // Use provided type if available, otherwise detect
     const roomType = providedRoomType || await detectRoomType(imageBase64);
@@ -188,7 +231,7 @@ export const generateFloorPlan = async (imageBase64: string, providedRoomType?: 
     const spatialContext = analysisResponse.text || `Standard ${finalRoomType} layout.`;
 
     // Step 3: Generation with Strict Drafting Rules (Draftsman Mode)
-    const genPrompt = `Generate a technical Architectural Floor Plan (2D Blueprint) for the ${finalRoomType} shown in the image.
+    let genPrompt = `Generate a technical Architectural Floor Plan (2D Blueprint) for the ${finalRoomType} shown in the image.
     
     Based on this spatial analysis:
     "${spatialContext}"
@@ -201,6 +244,10 @@ export const generateFloorPlan = async (imageBase64: string, providedRoomType?: 
     5. **Constraint**: ${!finalRoomType.toLowerCase().includes('bedroom') ? 'Do NOT draw a bed.' : ''}
     
     Ensure the furniture arrangement matches the provided image and analysis perfectly.`;
+
+    if (scale) {
+        genPrompt += `\n6. **Scale Detail**: The user requested a scale of ${scale}. Ensure the line weights and detail level correspond to this architectural scale (e.g. 1:50 show more detail, 1:200 show blocks).`;
+    }
 
     const response = await ai.models.generateContent({
       model: GENERATION_MODEL,
@@ -277,10 +324,14 @@ export const analyzeRoomDesign = async (imageBase64: string): Promise<any> => {
   }
 };
 
-export const createChatSession = (history?: Content[], language: 'en' | 'id' = 'en') => {
+export const createChatSession = (history?: Content[], language: 'en' | 'id' = 'en', budget?: string) => {
   const langInstruction = language === 'id' 
     ? "IMPORTANT: You MUST respond in Bahasa Indonesia (Indonesian Language). Use a professional, helpful, and creative tone suitable for an interior design consultant." 
     : "Respond in English.";
+  
+  const budgetInstruction = budget 
+    ? `The user has specified a project budget of ${budget}. Detect the currency (e.g. IDR/Rupiah if 'Juta' or 'Rp' is used) and use that currency for all estimates. Keep all suggestions, items, and renovation ideas within this financial constraint.` 
+    : "";
 
   return ai.chats.create({
     model: CHAT_MODEL,
@@ -288,6 +339,7 @@ export const createChatSession = (history?: Content[], language: 'en' | 'id' = '
     config: {
       systemInstruction: `You are ReRoom, an expert interior design consultant AI. ${langInstruction}
       Your goal is to help users refine their room designs and plan their renovations.
+      ${budgetInstruction}
       
       You have access to tools that can:
       1. Edit the room design image based on text instructions (e.g. "change the wall color to blue").

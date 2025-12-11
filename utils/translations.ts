@@ -41,6 +41,18 @@ export const translations = {
     style: {
       title: "Choose a Style",
     },
+    project: {
+      title: "Project Parameters",
+      budgetLabel: "Est. Budget",
+      budgetPlaceholder: "e.g. Rp 50 Juta or $5,000",
+      scaleLabel: "Floor Plan Scale",
+      scalePlaceholder: "e.g. 1:50, 1:100...",
+      scales: {
+        s50: "1:50 (High Detail)",
+        s100: "1:100 (Standard)",
+        s200: "1:200 (Layout Only)"
+      }
+    },
     analysis: {
       button: "Smart Analysis",
       analyzing: "Analyzing...",
@@ -52,7 +64,8 @@ export const translations = {
       quickWins: "Quick Wins",
       lighting: "Lighting",
       layout: "Layout Flow",
-      harmony: "Color Harmony"
+      harmony: "Color Harmony",
+      autoInsight: "I've done a quick scan of your room. Here are my initial thoughts:\n\n"
     },
     budget: {
       button: "Estimate Cost",
@@ -63,7 +76,7 @@ export const translations = {
     },
     floorPlan: {
       button: "2D Floor Plan",
-      generating: "Analyzing & Drafting...",
+      generating: "Drafting Plan...",
       view: "View Floor Plan",
       title: "Floor Plan Generator",
       subtitle: "Experimental Top-Down View",
@@ -75,7 +88,7 @@ export const translations = {
       subtitle: "Powered by Gemini 3 Pro",
       placeholder: "Type a message...",
       welcome: "Hello! I am ReRoom. Upload a photo of your room, and I can help you redesign it.",
-      uploadParams: "Photo uploaded! Select a style to start designing.",
+      uploadParams: "Photo uploaded! I'm analyzing the current conditions...",
       ready: "Ready for a new photo.",
       emptyState: "Ask me to refine the design or find items!",
       emptyStateSub: "\"Make the rug blue\" • \"How much would this cost?\"",
@@ -166,6 +179,18 @@ export const translations = {
     style: {
       title: "Pilih Gaya Desain",
     },
+    project: {
+      title: "Parameter Proyek",
+      budgetLabel: "Est. Anggaran",
+      budgetPlaceholder: "cth: Rp 50 Juta atau $5000",
+      scaleLabel: "Skala Denah",
+      scalePlaceholder: "cth: 1:50, 1:100...",
+      scales: {
+        s50: "1:50 (Sangat Detail)",
+        s100: "1:100 (Standar)",
+        s200: "1:200 (Hanya Layout)"
+      }
+    },
     analysis: {
       button: "Analisis Cerdas",
       analyzing: "Menganalisis...",
@@ -177,7 +202,8 @@ export const translations = {
       quickWins: "Solusi Cepat",
       lighting: "Pencahayaan",
       layout: "Alur Tata Letak",
-      harmony: "Harmoni Warna"
+      harmony: "Harmoni Warna",
+      autoInsight: "Saya telah memindai ruangan Anda. Berikut analisis awal saya:\n\n"
     },
     budget: {
       button: "Estimasi Biaya",
@@ -188,7 +214,7 @@ export const translations = {
     },
     floorPlan: {
       button: "Denah 2D",
-      generating: "Menganalisa & Menggambar...",
+      generating: "Menggambar Denah...",
       view: "Lihat Denah",
       title: "Generator Denah Lantai",
       subtitle: "Tampilan Atas Eksperimental",
@@ -200,7 +226,7 @@ export const translations = {
       subtitle: "Ditenagai oleh Gemini 3 Pro",
       placeholder: "Ketik pesan...",
       welcome: "Halo! Saya ReRoom. Unggah foto ruangan Anda, dan saya akan membantu mendesain ulang.",
-      uploadParams: "Foto diunggah! Pilih gaya untuk mulai mendesain.",
+      uploadParams: "Foto diunggah! Saya sedang menganalisa kondisi ruangan saat ini...",
       ready: "Siap untuk foto baru.",
       emptyState: "Minta saya untuk menyempurnakan desain atau mencari barang!",
       emptyStateSub: "\"Ubah karpet jadi biru\" • \"Berapa biayanya?\"",
