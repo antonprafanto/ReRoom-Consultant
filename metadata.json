@@ -1,0 +1,5 @@
+{
+  "name": "ReRoom Consultant",
+  "description": "An interactive interior design consultant powered by Gemini. Upload your room, reimagine styles, and refine with AI chat.",
+  "requestFramePermissions": []
+}
