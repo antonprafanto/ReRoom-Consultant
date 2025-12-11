@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Upload, Camera, ArrowRight, Wand2, Sparkles, SlidersHorizontal, Image as ImageIcon, Plus, X, Trash2, AlertCircle, RefreshCw, Dice5, Save, FolderOpen, Calendar, Clock, Download, FileImage, Columns, ChevronDown, Calculator, DollarSign, ScanEye, CheckCircle2, XCircle, Lightbulb, MoveRight, Palette, FileText, Settings, Globe, Moon, Sun, Map, HelpCircle, Pencil, Heart, MessageSquareText, Ruler, Wallet, Banknote, HardHat, Eye } from 'lucide-react';
 import { Message, DesignStyle, ShoppableItem, SavedDesign, BudgetEstimate, RoomAnalysis, ProjectSpecs } from './types';
@@ -95,6 +94,7 @@ const App: React.FC = () => {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const downloadMenuRef = useRef<HTMLDivElement>(null);
   const settingsMenuRef = useRef<HTMLDivElement>(null);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
   
   // Flag to prevent palette extraction overwriting loaded palette
   const isLoadingDesignRef = useRef(false);
@@ -116,7 +116,8 @@ const App: React.FC = () => {
 
     // Close menus on click outside
     const handleClickOutside = (event: MouseEvent) => {
-      if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target as Node)) {
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target as Node) && 
+          imageContainerRef.current && !imageContainerRef.current.contains(event.target as Node)) {
         setIsDownloadMenuOpen(false);
       }
       if (settingsMenuRef.current && !settingsMenuRef.current.contains(event.target as Node)) {
@@ -1145,17 +1146,58 @@ const App: React.FC = () => {
                     </div>
 
                     {/* Visualization Area */}
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border dark:border-slate-800 p-2 transition-colors">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border dark:border-slate-800 p-2 transition-colors relative group">
                         {isGenerating ? (
                             <div className="aspect-video w-full rounded-xl bg-gray-100 dark:bg-slate-800 flex flex-col items-center justify-center">
                                 <LoadingSpinner />
                                 <p className="mt-4 text-gray-500 dark:text-slate-400 font-medium animate-pulse">{t('loading.generating')}</p>
                             </div>
                         ) : generatedImage ? (
-                            <CompareSlider 
-                                originalImage={originalImage} 
-                                generatedImage={generatedImage} 
-                            />
+                            <>
+                                <CompareSlider 
+                                    originalImage={originalImage} 
+                                    generatedImage={generatedImage} 
+                                />
+                                
+                                {/* MOBILE DOWNLOAD BUTTON OVERLAY */}
+                                <div className="absolute top-4 right-4 z-20" ref={downloadMenuRef}>
+                                    <button
+                                        onClick={() => setIsDownloadMenuOpen(!isDownloadMenuOpen)}
+                                        className="flex items-center justify-center w-10 h-10 bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 rounded-full shadow-lg border border-gray-200 dark:border-slate-700 hover:scale-110 transition-transform"
+                                        title={t('actions.download')}
+                                    >
+                                        <Download size={20} />
+                                    </button>
+                                    
+                                    {isDownloadMenuOpen && (
+                                        <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-gray-100 dark:border-slate-800 z-30 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                            <button onClick={handleDownloadResult} className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-800 flex items-center gap-3 text-sm text-gray-700 dark:text-slate-200 transition-colors">
+                                                <FileImage size={18} className="text-indigo-600 dark:text-indigo-400" />
+                                                <div>
+                                                    <span className="font-semibold block">{t('actions.downloadResult')}</span>
+                                                    <span className="text-xs text-gray-400">{t('actions.saveDesc')}</span>
+                                                </div>
+                                            </button>
+                                            <div className="h-px bg-gray-100 dark:bg-slate-800" />
+                                            <button onClick={handleDownloadCollage} className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-800 flex items-center gap-3 text-sm text-gray-700 dark:text-slate-200 transition-colors">
+                                                <Columns size={18} className="text-indigo-600 dark:text-indigo-400" />
+                                                <div>
+                                                    <span className="font-semibold block">{t('actions.downloadCollage')}</span>
+                                                    <span className="text-xs text-gray-400">{t('actions.collageDesc')}</span>
+                                                </div>
+                                            </button>
+                                            <div className="h-px bg-gray-100 dark:bg-slate-800" />
+                                            <button onClick={handleExportPDF} className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-800 flex items-center gap-3 text-sm text-gray-700 dark:text-slate-200 transition-colors">
+                                                <FileText size={18} className="text-indigo-600 dark:text-indigo-400" />
+                                                <div>
+                                                    <span className="font-semibold block">{t('actions.exportPdf')}</span>
+                                                    <span className="text-xs text-gray-400">{t('actions.pdfDesc')}</span>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </>
                         ) : (
                             <div className="relative aspect-video w-full rounded-xl overflow-hidden group bg-gray-100 dark:bg-slate-800">
                                 <img 
@@ -1182,22 +1224,22 @@ const App: React.FC = () => {
                         <div className="flex justify-between items-start flex-wrap gap-4">
                             {/* Palette (Only show if generated image exists) */}
                             {palette.length > 0 ? (
-                                <div className="flex-1 min-w-[200px]">
+                                <div className="w-full lg:flex-1 min-w-[200px]">
                                     <ColorPalette colors={palette} />
                                 </div>
                             ) : (
                                 <div className="flex-1"></div>
                             )}
 
-                            <div className="flex items-center gap-2 mt-4 flex-wrap">
+                            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 mt-4 w-full lg:w-auto">
                                 {/* Analysis Button */}
                                 <button
                                     onClick={handleAnalyzeRoom}
                                     disabled={isAnalyzing}
-                                    className={`flex items-center gap-2 px-4 py-2 font-medium rounded-xl transition-colors shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-wait ${analysisResult ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-800' : 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40'}`}
+                                    className={`flex items-center justify-center gap-2 px-3 py-3 sm:px-4 sm:py-2 text-sm sm:text-base font-medium rounded-xl transition-colors shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-wait w-full sm:w-auto ${analysisResult ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-800' : 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40'}`}
                                 >
                                     {isAnalyzing ? <LoadingSpinner /> : <ScanEye size={18} />}
-                                    {isAnalyzing ? t('analysis.analyzing') : analysisResult ? t('analysis.view') : t('analysis.button')}
+                                    <span className="truncate">{isAnalyzing ? t('analysis.analyzing') : analysisResult ? t('analysis.view') : t('analysis.button')}</span>
                                 </button>
 
                                 {/* Specs Button */}
@@ -1205,10 +1247,10 @@ const App: React.FC = () => {
                                     <button
                                         onClick={handleGenerateSpecs}
                                         disabled={isGeneratingSpecs}
-                                        className={`flex items-center gap-2 px-4 py-2 font-medium rounded-xl transition-colors shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-wait ${projectSpecs ? 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600' : 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700/80'}`}
+                                        className={`flex items-center justify-center gap-2 px-3 py-3 sm:px-4 sm:py-2 text-sm sm:text-base font-medium rounded-xl transition-colors shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-wait w-full sm:w-auto ${projectSpecs ? 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600' : 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700/80'}`}
                                     >
                                         {isGeneratingSpecs ? <LoadingSpinner /> : <HardHat size={18} />}
-                                        {isGeneratingSpecs ? t('specs.generating') : projectSpecs ? t('specs.view') : t('specs.button')}
+                                        <span className="truncate">{isGeneratingSpecs ? t('specs.generating') : projectSpecs ? t('specs.view') : t('specs.button')}</span>
                                     </button>
                                 )}
 
@@ -1216,63 +1258,35 @@ const App: React.FC = () => {
                                 <button
                                     onClick={handleGenerateFloorPlan}
                                     disabled={isGeneratingFloorPlan}
-                                    className={`flex items-center gap-2 px-4 py-2 font-medium rounded-xl transition-colors shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-wait ${floorPlanImage ? 'bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-200 border border-orange-300 dark:border-orange-800' : 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-900 text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/40'}`}
+                                    className={`flex items-center justify-center gap-2 px-3 py-3 sm:px-4 sm:py-2 text-sm sm:text-base font-medium rounded-xl transition-colors shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-wait w-full sm:w-auto ${floorPlanImage ? 'bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-200 border border-orange-300 dark:border-orange-800' : 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-900 text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/40'}`}
                                 >
                                     {isGeneratingFloorPlan ? <LoadingSpinner /> : <Map size={18} />}
-                                    {isGeneratingFloorPlan ? t('floorPlan.generating') : floorPlanImage ? t('floorPlan.view') : t('floorPlan.button')}
+                                    <span className="truncate">{isGeneratingFloorPlan ? t('floorPlan.generating') : floorPlanImage ? t('floorPlan.view') : t('floorPlan.button')}</span>
                                 </button>
 
                                 {/* Budget Estimator Button (Only if generated) */}
                                 {generatedImage && (
                                     <button
                                         onClick={handleEstimateBudget}
-                                        className={`flex items-center gap-2 px-4 py-2 font-medium rounded-xl transition-colors shadow-sm whitespace-nowrap ${budgetEstimateResult ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800' : 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'}`}
+                                        className={`flex items-center justify-center gap-2 px-3 py-3 sm:px-4 sm:py-2 text-sm sm:text-base font-medium rounded-xl transition-colors shadow-sm whitespace-nowrap w-full sm:w-auto ${budgetEstimateResult ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800' : 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'}`}
                                     >
                                         <Calculator size={18} />
-                                        {budgetEstimateResult ? t('budget.view') : t('budget.button')}
+                                        <span className="truncate">{budgetEstimateResult ? t('budget.view') : t('budget.button')}</span>
                                     </button>
                                 )}
 
-                                {/* Download Button (Only if generated) */}
+                                {/* Download Button (HIDDEN ON MOBILE, VISIBLE ON DESKTOP) */}
+                                {/* This prevents clutter on mobile since we have the overlay button now */}
                                 {generatedImage && (
-                                    <div className="relative" ref={downloadMenuRef}>
+                                    <div className="relative col-span-2 sm:col-span-1 hidden sm:block">
                                         <button
                                             onClick={() => setIsDownloadMenuOpen(!isDownloadMenuOpen)}
-                                            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-200 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors shadow-sm whitespace-nowrap"
+                                            className="flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-200 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors shadow-sm whitespace-nowrap w-full sm:w-auto"
                                         >
                                             <Download size={18} />
                                             {t('actions.download')}
                                             <ChevronDown size={16} className={`transition-transform duration-200 ${isDownloadMenuOpen ? 'rotate-180' : ''}`} />
                                         </button>
-                                        
-                                        {/* Dropdown */}
-                                        {isDownloadMenuOpen && (
-                                            <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-gray-100 dark:border-slate-800 z-20 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                                                <button onClick={handleDownloadResult} className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-800 flex items-center gap-3 text-sm text-gray-700 dark:text-slate-200 transition-colors">
-                                                    <FileImage size={18} className="text-indigo-600 dark:text-indigo-400" />
-                                                    <div>
-                                                        <span className="font-semibold block">{t('actions.downloadResult')}</span>
-                                                        <span className="text-xs text-gray-400">{t('actions.saveDesc')}</span>
-                                                    </div>
-                                                </button>
-                                                <div className="h-px bg-gray-100 dark:bg-slate-800" />
-                                                <button onClick={handleDownloadCollage} className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-800 flex items-center gap-3 text-sm text-gray-700 dark:text-slate-200 transition-colors">
-                                                    <Columns size={18} className="text-indigo-600 dark:text-indigo-400" />
-                                                    <div>
-                                                        <span className="font-semibold block">{t('actions.downloadCollage')}</span>
-                                                        <span className="text-xs text-gray-400">{t('actions.collageDesc')}</span>
-                                                    </div>
-                                                </button>
-                                                <div className="h-px bg-gray-100 dark:bg-slate-800" />
-                                                <button onClick={handleExportPDF} className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-800 flex items-center gap-3 text-sm text-gray-700 dark:text-slate-200 transition-colors">
-                                                    <FileText size={18} className="text-indigo-600 dark:text-indigo-400" />
-                                                    <div>
-                                                        <span className="font-semibold block">{t('actions.exportPdf')}</span>
-                                                        <span className="text-xs text-gray-400">{t('actions.pdfDesc')}</span>
-                                                    </div>
-                                                </button>
-                                            </div>
-                                        )}
                                     </div>
                                 )}
                             </div>
