@@ -276,6 +276,79 @@ export const generateFloorPlan = async (
   }
 };
 
+export const generateProjectSpecs = async (imageBase64: string): Promise<any> => {
+  try {
+    const prompt = `Act as a Civil Engineer or Construction Project Manager (Manajemen Konstruksi). 
+    Analyze this interior design image to create a technical specification and work schedule.
+    
+    Output JSON with:
+    1. "materials": List of 5-7 key visible materials with specific technical descriptions (e.g. "Flooring: Porcelain Tile 60x60cm, Polished finish", "Walls: Gypsum board with Dulux EasyClean paint"). Add estimated quantity if possible (e.g. "approx 20m2").
+    2. "workSteps": A renovation breakdown in 3-5 phases (e.g. "Preparation", "Installation", "Finishing"). Each phase has "tasks" (array of strings) and "durationDays".
+    3. "totalDurationWeeks": Integer estimated total project duration in weeks.
+    4. "difficultyLevel": "Low", "Medium", or "High".
+    5. "contractorNote": A brief technical note for the contractor regarding potential challenges in this specific room (e.g. plumbing location, lighting wiring).`;
+
+    const response = await ai.models.generateContent({
+      model: ANALYSIS_MODEL,
+      contents: {
+        parts: [
+          {
+            inlineData: {
+              mimeType: 'image/jpeg',
+              data: imageBase64.split(',')[1],
+            },
+          },
+          { text: prompt },
+        ],
+      },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            materials: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  item: { type: Type.STRING },
+                  specification: { type: Type.STRING },
+                  quantityEst: { type: Type.STRING }
+                },
+                required: ['item', 'specification']
+              }
+            },
+            workSteps: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  phase: { type: Type.STRING },
+                  tasks: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  durationDays: { type: Type.NUMBER }
+                },
+                required: ['phase', 'tasks', 'durationDays']
+              }
+            },
+            totalDurationWeeks: { type: Type.NUMBER },
+            difficultyLevel: { type: Type.STRING, enum: ['Low', 'Medium', 'High'] },
+            contractorNote: { type: Type.STRING }
+          },
+          required: ['materials', 'workSteps', 'totalDurationWeeks', 'difficultyLevel', 'contractorNote']
+        }
+      }
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("No specs generated");
+    return JSON.parse(text);
+
+  } catch (error) {
+    console.error("Specs Generation Error:", error);
+    throw error;
+  }
+};
+
 export const analyzeRoomDesign = async (imageBase64: string): Promise<any> => {
   try {
     const prompt = `Act as a professional interior designer. Analyze this room image critically.

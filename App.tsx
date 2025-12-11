@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Upload, Camera, ArrowRight, Wand2, Sparkles, SlidersHorizontal, Image as ImageIcon, Plus, X, Trash2, AlertCircle, RefreshCw, Dice5, Save, FolderOpen, Calendar, Clock, Download, FileImage, Columns, ChevronDown, Calculator, DollarSign, ScanEye, CheckCircle2, XCircle, Lightbulb, MoveRight, Palette, FileText, Settings, Globe, Moon, Sun, Map, HelpCircle, Pencil, Heart, MessageSquareText, Ruler, Wallet, Banknote } from 'lucide-react';
-import { Message, DesignStyle, ShoppableItem, SavedDesign, BudgetEstimate, RoomAnalysis } from './types';
+import { Upload, Camera, ArrowRight, Wand2, Sparkles, SlidersHorizontal, Image as ImageIcon, Plus, X, Trash2, AlertCircle, RefreshCw, Dice5, Save, FolderOpen, Calendar, Clock, Download, FileImage, Columns, ChevronDown, Calculator, DollarSign, ScanEye, CheckCircle2, XCircle, Lightbulb, MoveRight, Palette, FileText, Settings, Globe, Moon, Sun, Map, HelpCircle, Pencil, Heart, MessageSquareText, Ruler, Wallet, Banknote, HardHat, Eye } from 'lucide-react';
+import { Message, DesignStyle, ShoppableItem, SavedDesign, BudgetEstimate, RoomAnalysis, ProjectSpecs } from './types';
 import CompareSlider from './components/CompareSlider';
 import StyleCarousel from './components/StyleCarousel';
 import ChatInterface from './components/ChatInterface';
@@ -11,10 +11,11 @@ import ColorPalette from './components/ColorPalette';
 import AnalysisModal from './components/AnalysisModal';
 import BudgetModal from './components/BudgetModal';
 import FloorPlanModal from './components/FloorPlanModal';
+import SpecsModal from './components/SpecsModal';
 import HelpModal from './components/HelpModal';
 import RoomTypeModal from './components/RoomTypeModal'; 
 import RoomDetectionLoader from './components/RoomDetectionLoader'; 
-import { generateRoomDesign, editRoomDesign, createChatSession, analyzeRoomDesign, generateFloorPlan, detectRoomType, getQuickRoomInsights } from './services/geminiService';
+import { generateRoomDesign, editRoomDesign, createChatSession, analyzeRoomDesign, generateFloorPlan, detectRoomType, getQuickRoomInsights, generateProjectSpecs } from './services/geminiService';
 import { extractPalette } from './utils/colorUtils';
 import { downloadImage, createComparisonCollage } from './utils/downloadUtils';
 import { generatePDFReport } from './utils/reportUtils';
@@ -53,6 +54,11 @@ const App: React.FC = () => {
   const [floorPlanImage, setFloorPlanImage] = useState<string | null>(null);
   const [isFloorPlanModalOpen, setIsFloorPlanModalOpen] = useState(false);
 
+  // Project Specs State
+  const [isGeneratingSpecs, setIsGeneratingSpecs] = useState(false);
+  const [projectSpecs, setProjectSpecs] = useState<ProjectSpecs | null>(null);
+  const [isSpecsModalOpen, setIsSpecsModalOpen] = useState(false);
+
   // New Project Parameters
   const [projectBudget, setProjectBudget] = useState<string>('');
   const [floorPlanScale, setFloorPlanScale] = useState<string>('1:100');
@@ -63,7 +69,7 @@ const App: React.FC = () => {
 
   // Library Preview State
   const [previewData, setPreviewData] = useState<{
-      type: 'analysis' | 'budget' | 'palette';
+      type: 'analysis' | 'budget' | 'palette' | 'specs';
       data: any;
   } | null>(null);
 
@@ -188,6 +194,7 @@ const App: React.FC = () => {
              setAnalysisResult(null); // Reset analysis
              setBudgetEstimateResult(null); // Reset budget
              setFloorPlanImage(null); // Reset floor plan
+             setProjectSpecs(null); // Reset specs
              setDetectedRoomType(null); // Reset room type
              setIsImageConfirmed(false); // Reset confirmation state
              setProjectBudget(''); // Reset budget on new image
@@ -228,6 +235,7 @@ const App: React.FC = () => {
     setAnalysisResult(null);
     setBudgetEstimateResult(null);
     setFloorPlanImage(null);
+    setProjectSpecs(null);
     setDetectedRoomType(null);
     setIsImageConfirmed(false);
     setIsRoomTypeModalOpen(false);
@@ -318,6 +326,30 @@ const App: React.FC = () => {
           setIsGeneratingFloorPlan(false);
       }
   };
+  
+  const handleGenerateSpecs = async () => {
+      if (!generatedImage && !originalImage) return;
+      const targetImage = generatedImage || originalImage;
+
+      if (projectSpecs) {
+          setIsSpecsModalOpen(true);
+          return;
+      }
+
+      if (isGeneratingSpecs) return;
+
+      setIsGeneratingSpecs(true);
+      try {
+          const result = await generateProjectSpecs(targetImage!);
+          setProjectSpecs(result);
+          setIsSpecsModalOpen(true);
+      } catch (error) {
+          console.error("Specs generation failed", error);
+          alert("Could not generate project specifications.");
+      } finally {
+          setIsGeneratingSpecs(false);
+      }
+  };
 
   // --- Download Logic ---
   const handleDownloadResult = () => {
@@ -348,7 +380,8 @@ const App: React.FC = () => {
       selectedStyle: selectedStyle || 'Custom',
       palette,
       analysis: analysisResult,
-      budget: budgetEstimateResult
+      budget: budgetEstimateResult,
+      specs: projectSpecs // Passed here
     });
     setIsDownloadMenuOpen(false);
   };
@@ -367,7 +400,8 @@ const App: React.FC = () => {
           palette,
           chatMessages,
           analysis: analysisResult || undefined,
-          budgetEstimate: budgetEstimateResult || undefined
+          budgetEstimate: budgetEstimateResult || undefined,
+          projectSpecs: projectSpecs || undefined
       };
 
       try {
@@ -393,6 +427,7 @@ const App: React.FC = () => {
       setChatMessages(design.chatMessages);
       setAnalysisResult(design.analysis || null);
       setBudgetEstimateResult(design.budgetEstimate || null);
+      setProjectSpecs(design.projectSpecs || null);
       setFloorPlanImage(null); // Saved designs don't currently support floor plan storage in type, so reset
       setDetectedRoomType(null); // Reset room type on load as it isn't saved in schema yet
       setProjectBudget(''); // Reset budget
@@ -445,6 +480,7 @@ const App: React.FC = () => {
     setAnalysisResult(null);
     setBudgetEstimateResult(null);
     setFloorPlanImage(null);
+    setProjectSpecs(null);
 
     // Check if we already have this style generated
     if (stylePreviews[style]) {
@@ -549,7 +585,7 @@ const App: React.FC = () => {
   };
 
   // Preview Helpers
-  const openLibraryPreview = (type: 'analysis' | 'budget' | 'palette', data: any) => {
+  const openLibraryPreview = (type: 'analysis' | 'budget' | 'palette' | 'specs', data: any) => {
       setPreviewData({ type, data });
   };
   
@@ -562,6 +598,9 @@ const App: React.FC = () => {
   
   const activeBudgetData = (previewData?.type === 'budget' ? previewData.data : budgetEstimateResult);
   const isBudgetModalVisible = isBudgetModalOpen || (previewData?.type === 'budget');
+
+  const activeSpecsData = (previewData?.type === 'specs' ? previewData.data : projectSpecs);
+  const isSpecsModalVisible = isSpecsModalOpen || (previewData?.type === 'specs');
 
   const activePaletteData = (previewData?.type === 'palette' ? previewData.data : null);
 
@@ -616,6 +655,16 @@ const App: React.FC = () => {
             closeLibraryPreview();
         }}
         data={activeBudgetData}
+      />
+
+      {/* Specs Modal */}
+      <SpecsModal
+        isOpen={isSpecsModalVisible}
+        onClose={() => {
+            setIsSpecsModalOpen(false);
+            closeLibraryPreview();
+        }}
+        data={activeSpecsData}
       />
 
       {/* Floor Plan Modal */}
@@ -709,6 +758,18 @@ const App: React.FC = () => {
                                                         title="View Analysis"
                                                     >
                                                        <ScanEye size={12} /> Analysis
+                                                   </button>
+                                               )}
+                                               {design.projectSpecs && (
+                                                   <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            openLibraryPreview('specs', design.projectSpecs);
+                                                        }}
+                                                        className="flex items-center gap-1 text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-700"
+                                                        title="View Technical Specs"
+                                                    >
+                                                       <HardHat size={12} /> Specs
                                                    </button>
                                                )}
                                                {design.budgetEstimate && (
@@ -856,53 +917,69 @@ const App: React.FC = () => {
         {!originalImage ? (
             /* LANDING VIEW: Dedicated full-screen upload experience */
             <div className="flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] animate-in fade-in zoom-in-95 duration-500">
-                <div className="text-center mb-10 max-w-2xl">
-                    <div className="inline-block p-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-full mb-6 text-indigo-600 dark:text-indigo-400">
+                <div className="text-center mb-10 max-w-2xl relative">
+                    <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-64 h-64 bg-indigo-500/20 rounded-full blur-[100px] pointer-events-none" />
+                    <div className="inline-block p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-lg mb-6 text-indigo-600 dark:text-indigo-400 relative z-10 border border-indigo-50 dark:border-slate-700">
                         <Wand2 size={48} />
                     </div>
-                    <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-4 tracking-tight">
+                    <h1 className="text-4xl md:text-6xl font-extrabold text-gray-900 dark:text-white mb-6 tracking-tight relative z-10">
                         {t('hero.title')}
                     </h1>
-                    <p className="text-xl text-gray-600 dark:text-slate-400">
+                    <p className="text-xl text-gray-600 dark:text-slate-400 relative z-10 leading-relaxed">
                         {t('hero.subtitle')}
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-md">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-md relative z-10">
                     <button 
                         onClick={handleUploadClick}
-                        className="flex flex-col items-center justify-center p-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-xl shadow-indigo-200 dark:shadow-none transition-all hover:scale-[1.02] group"
+                        className="flex flex-col items-center justify-center p-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-xl shadow-indigo-200 dark:shadow-none transition-all hover:scale-[1.02] group"
                     >
-                        <Upload size={32} className="mb-3 group-hover:-translate-y-1 transition-transform" />
+                        <Upload size={28} className="mb-2 group-hover:-translate-y-1 transition-transform" />
                         <span className="text-lg font-bold">{t('hero.button')}</span>
-                        <span className="text-xs text-indigo-200 mt-1 opacity-80">From Gallery / File</span>
                     </button>
 
                     <button 
                         onClick={handleCameraClick}
-                        className="flex flex-col items-center justify-center p-8 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 border-2 border-gray-100 dark:border-slate-700 text-gray-900 dark:text-white rounded-2xl transition-all hover:border-indigo-200 dark:hover:border-indigo-900 hover:scale-[1.02] group"
+                        className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 border-2 border-gray-100 dark:border-slate-700 text-gray-900 dark:text-white rounded-2xl transition-all hover:border-indigo-200 dark:hover:border-indigo-900 hover:scale-[1.02] group"
                     >
-                        <Camera size={32} className="mb-3 group-hover:-translate-y-1 transition-transform text-indigo-500" />
+                        <Camera size={28} className="mb-2 group-hover:-translate-y-1 transition-transform text-indigo-500" />
                         <span className="text-lg font-bold">{t('hero.cameraButton')}</span>
-                        <span className="text-xs text-gray-500 dark:text-slate-400 mt-1">Take a Picture</span>
                     </button>
                 </div>
 
-                {/* Steps / Features Preview */}
-                <div className="mt-16 flex justify-center gap-8 md:gap-16 opacity-60">
-                     <div className="flex flex-col items-center gap-2">
-                        <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center text-gray-500 dark:text-slate-400 font-bold">1</div>
-                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Upload</span>
+                {/* FEATURE SHOWCASE GRID (New "How it works/Value Prop") */}
+                <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-5xl px-4">
+                     <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col items-center text-center animate-in slide-in-from-bottom-4 fade-in duration-700 delay-100 hover:border-indigo-100 dark:hover:border-slate-700 transition-colors">
+                        <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-xl text-purple-600 dark:text-purple-300 mb-3">
+                            <Sparkles size={24} />
+                        </div>
+                        <h3 className="font-bold text-gray-900 dark:text-white mb-1">{t('features.visualizeTitle')}</h3>
+                        <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">{t('features.visualizeDesc')}</p>
                      </div>
-                     <div className="h-px w-16 bg-gray-200 dark:bg-slate-700 mt-5 hidden sm:block"></div>
-                     <div className="flex flex-col items-center gap-2">
-                        <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center text-gray-500 dark:text-slate-400 font-bold">2</div>
-                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Style</span>
+
+                     <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col items-center text-center animate-in slide-in-from-bottom-4 fade-in duration-700 delay-200 hover:border-indigo-100 dark:hover:border-slate-700 transition-colors">
+                        <div className="bg-emerald-100 dark:bg-emerald-900/30 p-3 rounded-xl text-emerald-600 dark:text-emerald-300 mb-3">
+                            <Wallet size={24} />
+                        </div>
+                        <h3 className="font-bold text-gray-900 dark:text-white mb-1">{t('features.budgetTitle')}</h3>
+                        <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">{t('features.budgetDesc')}</p>
                      </div>
-                     <div className="h-px w-16 bg-gray-200 dark:bg-slate-700 mt-5 hidden sm:block"></div>
-                     <div className="flex flex-col items-center gap-2">
-                        <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center text-gray-500 dark:text-slate-400 font-bold">3</div>
-                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Chat</span>
+
+                     <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col items-center text-center animate-in slide-in-from-bottom-4 fade-in duration-700 delay-300 hover:border-indigo-100 dark:hover:border-slate-700 transition-colors">
+                        <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-xl text-blue-600 dark:text-blue-300 mb-3">
+                            <HardHat size={24} />
+                        </div>
+                        <h3 className="font-bold text-gray-900 dark:text-white mb-1">{t('features.specsTitle')}</h3>
+                        <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">{t('features.specsDesc')}</p>
+                     </div>
+
+                     <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col items-center text-center animate-in slide-in-from-bottom-4 fade-in duration-700 delay-400 hover:border-indigo-100 dark:hover:border-slate-700 transition-colors">
+                        <div className="bg-orange-100 dark:bg-orange-900/30 p-3 rounded-xl text-orange-600 dark:text-orange-300 mb-3">
+                            <Map size={24} />
+                        </div>
+                        <h3 className="font-bold text-gray-900 dark:text-white mb-1">{t('features.planTitle')}</h3>
+                        <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">{t('features.planDesc')}</p>
                      </div>
                 </div>
             </div>
@@ -959,7 +1036,15 @@ const App: React.FC = () => {
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('style.title')}</h2>
+                                {/* First Time Tip: Show specific header when no style selected */}
+                                {!generatedImage && !isGenerating ? (
+                                    <h2 className="text-lg font-bold text-indigo-600 dark:text-indigo-400 animate-pulse flex items-center gap-2">
+                                        <MoveRight size={20} /> {t('style.title')}
+                                    </h2>
+                                ) : (
+                                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('style.title')}</h2>
+                                )}
+                                
                                 {detectedRoomType && !isDetectingRoom && (
                                     <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 rounded-full border border-indigo-100 dark:border-indigo-800">
                                         <span className="text-xs text-indigo-600 dark:text-indigo-300 font-medium">{t('roomDetection.detected')}: <strong>{detectedRoomType}</strong></span>
@@ -1081,6 +1166,13 @@ const App: React.FC = () => {
                                         e.currentTarget.style.display = 'none';
                                     }}
                                 />
+                                {/* Overlay hint for new users */}
+                                <div className="absolute inset-0 bg-black/10 flex items-center justify-center pointer-events-none">
+                                    <div className="bg-white/90 dark:bg-black/80 backdrop-blur px-6 py-3 rounded-full shadow-lg flex items-center gap-3 animate-in fade-in zoom-in duration-500 delay-500">
+                                        <Sparkles className="text-indigo-500" size={20} />
+                                        <span className="text-sm font-medium text-gray-800 dark:text-white">Choose a style above to start</span>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -1107,6 +1199,18 @@ const App: React.FC = () => {
                                     {isAnalyzing ? <LoadingSpinner /> : <ScanEye size={18} />}
                                     {isAnalyzing ? t('analysis.analyzing') : analysisResult ? t('analysis.view') : t('analysis.button')}
                                 </button>
+
+                                {/* Specs Button */}
+                                {(generatedImage || originalImage) && (
+                                    <button
+                                        onClick={handleGenerateSpecs}
+                                        disabled={isGeneratingSpecs}
+                                        className={`flex items-center gap-2 px-4 py-2 font-medium rounded-xl transition-colors shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-wait ${projectSpecs ? 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600' : 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700/80'}`}
+                                    >
+                                        {isGeneratingSpecs ? <LoadingSpinner /> : <HardHat size={18} />}
+                                        {isGeneratingSpecs ? t('specs.generating') : projectSpecs ? t('specs.view') : t('specs.button')}
+                                    </button>
+                                )}
 
                                 {/* Floor Plan Button */}
                                 <button

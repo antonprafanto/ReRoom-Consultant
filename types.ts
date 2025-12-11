@@ -19,6 +19,26 @@ export interface BudgetEstimate {
   disclaimer: string;
 }
 
+export interface MaterialSpec {
+  item: string;
+  specification: string;
+  quantityEst?: string; // e.g. "approx 20m2"
+}
+
+export interface WorkStep {
+  phase: string; // e.g., "Persiapan", "Struktural", "Finishing"
+  tasks: string[];
+  durationDays: number;
+}
+
+export interface ProjectSpecs {
+  materials: MaterialSpec[];
+  workSteps: WorkStep[];
+  totalDurationWeeks: number;
+  difficultyLevel: 'Low' | 'Medium' | 'High';
+  contractorNote: string;
+}
+
 export interface RoomAnalysis {
   lightingScore: number;
   layoutScore: number;
@@ -52,7 +72,8 @@ export interface SavedDesign {
   palette: string[];
   chatMessages: Message[];
   analysis?: RoomAnalysis;
-  budgetEstimate?: BudgetEstimate; // Added budgetEstimate
+  budgetEstimate?: BudgetEstimate;
+  projectSpecs?: ProjectSpecs; // Added ProjectSpecs
 }
 
 export enum DesignStyle {

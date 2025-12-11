@@ -11,13 +11,23 @@ export const translations = {
       theme: "Theme",
       light: "Light",
       dark: "Dark",
-      help: "How to Use"
+      help: "Guide"
     },
     hero: {
-      title: "Upload your room",
-      subtitle: "Take a photo or upload an image of your space to start reimagining.",
+      title: "Your AI Interior Architect",
+      subtitle: "Transform any room in seconds. Get photorealistic designs, budget estimates, and construction specs instantly.",
       button: "Select Photo",
       cameraButton: "Take Photo"
+    },
+    features: {
+      visualizeTitle: "Photorealistic Redesign",
+      visualizeDesc: "Visualize 30+ interior styles instantly on your actual room photo.",
+      budgetTitle: "Smart Budgeting",
+      budgetDesc: "Get estimated renovation costs in your local currency based on the design.",
+      specsTitle: "Technical Specs",
+      specsDesc: "Generate material lists, work steps, and timelines for contractors.",
+      planTitle: "Layout & Floor Plan",
+      planDesc: "Auto-generate 2D floor plans to understand the spatial layout."
     },
     preview: {
       title: "Photo Ready!",
@@ -39,7 +49,7 @@ export const translations = {
       pdfDesc: "Print full consultation report"
     },
     style: {
-      title: "Choose a Style",
+      title: "Select a Design Style to Begin",
     },
     project: {
       title: "Project Parameters",
@@ -73,6 +83,19 @@ export const translations = {
       title: "Cost Estimate",
       included: "Included Items",
       disclaimer: "This is an AI-generated estimate for planning purposes only."
+    },
+    specs: {
+      button: "Specs & Timeline",
+      generating: "Planning...",
+      view: "View Specs",
+      title: "Technical Specifications",
+      subtitle: "Construction & Material Breakdown",
+      materials: "Material List",
+      timeline: "Work Schedule",
+      difficulty: "Complexity",
+      contractorNote: "Contractor Note",
+      weeks: "Weeks",
+      days: "days"
     },
     floorPlan: {
       button: "2D Floor Plan",
@@ -118,14 +141,14 @@ export const translations = {
     },
     help: {
       title: "How to Use ReRoom",
-      step1Title: "Upload Photo",
-      step1Desc: "Take a clear photo of your room or upload one from your gallery.",
-      step2Title: "Choose Style",
-      step2Desc: "Select a design style (e.g., Modern, Industrial) to instantly reimagine the space.",
-      step3Title: "Chat & Refine",
-      step3Desc: "Chat with the AI to change colors, furniture, or ask for budget estimates.",
-      step4Title: "Tools",
-      step4Desc: "Use 'Smart Analysis' for design feedback or 'Floor Plan' for layout views."
+      step1Title: "Capture & Upload",
+      step1Desc: "Take a photo of your room. For best results, stand in a corner to capture the whole space.",
+      step2Title: "Select Style",
+      step2Desc: "Choose a preset style (Modern, Industrial, etc) to instantly visualize a new look.",
+      step3Title: "Plan & Budget",
+      step3Desc: "Use the 'Estimate Cost' and 'Specs' tools to get actionable renovation data.",
+      step4Title: "Chat to Refine",
+      step4Desc: "Don't like the color? Want a different sofa? Just tell the AI in the chat to change it."
     },
     roomDetection: {
       title: "Identify Room Type",
@@ -149,13 +172,23 @@ export const translations = {
       theme: "Tema",
       light: "Terang",
       dark: "Gelap",
-      help: "Cara Pakai"
+      help: "Panduan"
     },
     hero: {
-      title: "Unggah ruangan Anda",
-      subtitle: "Ambil foto atau unggah gambar ruangan Anda untuk mulai merancang ulang.",
+      title: "Arsitek Interior AI Anda",
+      subtitle: "Ubah ruangan apapun dalam hitungan detik. Dapatkan desain fotorealistik, estimasi biaya, dan spek teknis secara instan.",
       button: "Pilih Foto",
       cameraButton: "Ambil Foto"
+    },
+    features: {
+      visualizeTitle: "Desain Fotorealistik",
+      visualizeDesc: "Visualisasikan 30+ gaya interior secara instan pada foto ruangan asli Anda.",
+      budgetTitle: "Estimasi Anggaran",
+      budgetDesc: "Dapatkan perkiraan biaya renovasi dalam mata uang lokal berdasarkan desain.",
+      specsTitle: "Spesifikasi Teknis",
+      specsDesc: "Buat daftar material, tahapan kerja, dan jadwal waktu untuk kontraktor.",
+      planTitle: "Denah & Layout",
+      planDesc: "Buat denah lantai 2D otomatis untuk memahami tata letak spasial."
     },
     preview: {
       title: "Foto Siap!",
@@ -177,7 +210,7 @@ export const translations = {
       pdfDesc: "Cetak laporan konsultasi lengkap"
     },
     style: {
-      title: "Pilih Gaya Desain",
+      title: "Pilih Gaya Desain untuk Memulai",
     },
     project: {
       title: "Parameter Proyek",
@@ -211,6 +244,19 @@ export const translations = {
       title: "Estimasi Biaya",
       included: "Item Termasuk",
       disclaimer: "Ini adalah estimasi AI untuk tujuan perencanaan saja."
+    },
+    specs: {
+      button: "Spek & Jadwal",
+      generating: "Menyusun...",
+      view: "Lihat Spek",
+      title: "Spesifikasi Teknis",
+      subtitle: "Material & Jadwal Konstruksi",
+      materials: "Daftar Material",
+      timeline: "Jadwal Kerja",
+      difficulty: "Kompleksitas",
+      contractorNote: "Catatan Kontraktor",
+      weeks: "Minggu",
+      days: "hari"
     },
     floorPlan: {
       button: "Denah 2D",
@@ -256,14 +302,14 @@ export const translations = {
     },
     help: {
       title: "Cara Menggunakan ReRoom",
-      step1Title: "Unggah Foto",
-      step1Desc: "Ambil foto ruangan yang jelas atau unggah dari galeri Anda.",
+      step1Title: "Foto & Unggah",
+      step1Desc: "Ambil foto ruangan. Untuk hasil terbaik, berdiri di sudut agar seluruh ruangan terlihat.",
       step2Title: "Pilih Gaya",
-      step2Desc: "Pilih gaya desain (misal: Modern, Industrial) untuk merancang ulang seketika.",
-      step3Title: "Chat & Edit",
-      step3Desc: "Chat dengan AI untuk mengubah warna, furnitur, atau meminta estimasi biaya.",
-      step4Title: "Alat Tambahan",
-      step4Desc: "Gunakan 'Analisis Cerdas' untuk saran desain atau 'Denah' untuk melihat tata letak."
+      step2Desc: "Pilih gaya (Modern, Industrial, dll) untuk melihat tampilan baru secara instan.",
+      step3Title: "Rencana & Anggaran",
+      step3Desc: "Gunakan fitur 'Estimasi Biaya' dan 'Spek Teknis' untuk data renovasi yang nyata.",
+      step4Title: "Chat & Ubah",
+      step4Desc: "Ingin ganti warna sofa? Katakan saja pada AI di chat untuk mengubahnya."
     },
     roomDetection: {
       title: "Identifikasi Tipe Ruangan",

@@ -1,5 +1,5 @@
 
-import { RoomAnalysis, BudgetEstimate } from '../types';
+import { RoomAnalysis, BudgetEstimate, ProjectSpecs } from '../types';
 
 interface ReportData {
   originalImage: string;
@@ -8,10 +8,11 @@ interface ReportData {
   palette: string[];
   analysis: RoomAnalysis | null;
   budget: BudgetEstimate | null;
+  specs: ProjectSpecs | null;
 }
 
 export const generatePDFReport = (data: ReportData) => {
-  const { originalImage, generatedImage, selectedStyle, palette, analysis, budget } = data;
+  const { originalImage, generatedImage, selectedStyle, palette, analysis, budget, specs } = data;
 
   const printWindow = window.open('', '_blank');
   if (!printWindow) {
@@ -121,6 +122,22 @@ export const generatePDFReport = (data: ReportData) => {
         .budget-item:last-child { border-bottom: none; }
         .disclaimer { font-size: 10px; font-style: italic; color: #9CA3AF; margin-top: 10px; }
 
+        /* Specs Table */
+        .specs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .spec-box { background: #F8FAFC; border: 1px solid #E2E8F0; padding: 15px; border-radius: 8px; text-align: center; }
+        .spec-val { font-size: 20px; font-weight: 700; color: #1E293B; }
+        .spec-lbl { font-size: 11px; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px; }
+        th { text-align: left; background: #F1F5F9; padding: 8px; border-bottom: 2px solid #E2E8F0; font-size: 12px; color: #475569; }
+        td { padding: 8px; border-bottom: 1px solid #E2E8F0; }
+        tr:last-child td { border-bottom: none; }
+        
+        .timeline-item { margin-bottom: 15px; }
+        .phase-name { font-weight: 700; font-size: 14px; color: #1E293B; display: flex; justify-content: space-between; }
+        .phase-days { background: #EEF2FF; color: #4F46E5; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+        .phase-tasks { color: #475569; font-size: 13px; margin-top: 4px; padding-left: 10px; border-left: 2px solid #E2E8F0; }
+
         footer {
           margin-top: 50px;
           border-top: 1px solid #E5E7EB;
@@ -211,9 +228,66 @@ export const generatePDFReport = (data: ReportData) => {
       </div>
       ` : ''}
 
-      <!-- Section 3: Budget -->
+      <!-- Section 3: Specs & Timeline (NEW) -->
+      ${specs ? `
+      <div class="page-break"></div>
+      <div class="section">
+        <div class="section-title">Technical Specifications & Schedule</div>
+        
+        <div class="specs-grid">
+            <div class="spec-box">
+                <div class="spec-val">${specs.totalDurationWeeks} Weeks</div>
+                <div class="spec-lbl">Estimated Duration</div>
+            </div>
+            <div class="spec-box">
+                <div class="spec-val" style="color: ${specs.difficultyLevel === 'High' ? '#DC2626' : specs.difficultyLevel === 'Medium' ? '#D97706' : '#059669'}">${specs.difficultyLevel}</div>
+                <div class="spec-lbl">Complexity Level</div>
+            </div>
+        </div>
+
+        <h4 style="margin-bottom: 10px; margin-top: 20px; font-size: 14px;">MATERIAL SPECIFICATIONS</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 30%">Item</th>
+                    <th style="width: 50%">Specification</th>
+                    <th style="width: 20%">Est. Qty</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${specs.materials.map(m => `
+                    <tr>
+                        <td><strong>${m.item}</strong></td>
+                        <td>${m.specification}</td>
+                        <td>${m.quantityEst || '-'}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+
+        <h4 style="margin-bottom: 10px; margin-top: 20px; font-size: 14px;">WORK SCHEDULE</h4>
+        <div>
+            ${specs.workSteps.map(step => `
+                <div class="timeline-item">
+                    <div class="phase-name">
+                        ${step.phase}
+                        <span class="phase-days">${step.durationDays} Days</span>
+                    </div>
+                    <div class="phase-tasks">
+                        ${step.tasks.join('<br/>• ')}
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+
+        <div style="background: #FFFBEB; border: 1px solid #FCD34D; padding: 12px; border-radius: 6px; font-size: 12px; color: #92400E; margin-top: 20px;">
+            <strong>Contractor Note:</strong> ${specs.contractorNote}
+        </div>
+      </div>
+      ` : ''}
+
+      <!-- Section 4: Budget -->
       ${budget ? `
-      <div class="page-break"></div> <!-- Force new page if budget exists -->
       <div class="section">
         <div class="section-title">Renovation Estimate</div>
         <div class="budget-total">
