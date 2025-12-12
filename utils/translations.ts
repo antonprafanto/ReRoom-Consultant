@@ -11,7 +11,8 @@ export const translations = {
       theme: "Theme",
       light: "Light",
       dark: "Dark",
-      help: "Guide"
+      help: "Guide",
+      support: "Support"
     },
     hero: {
       title: "Your AI Interior Architect",
@@ -172,7 +173,8 @@ export const translations = {
       theme: "Tema",
       light: "Terang",
       dark: "Gelap",
-      help: "Panduan"
+      help: "Panduan",
+      support: "Dukung"
     },
     hero: {
       title: "Arsitek Interior AI Anda",

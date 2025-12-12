@@ -835,6 +835,29 @@ const App: React.FC = () => {
               >
                   <HelpCircle size={20} />
               </button>
+              
+              {/* SUPPORT / TRAKTEER BUTTON - DESKTOP */}
+              <a 
+                href="https://trakteer.id/limitless7/tip" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm font-medium text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-900/20 hover:bg-pink-100 dark:hover:bg-pink-900/40 rounded-lg transition-colors"
+                title="Support Us"
+              >
+                  <Heart size={18} className="fill-pink-500 stroke-pink-600 dark:stroke-pink-400" />
+                  <span>{t('nav.support')}</span>
+              </a>
+
+               {/* SUPPORT / TRAKTEER BUTTON - MOBILE */}
+               <a 
+                href="https://trakteer.id/limitless7/tip" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="sm:hidden p-2 text-pink-600 dark:text-pink-400 hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-lg transition-colors"
+                title="Support Us"
+              >
+                  <Heart size={20} />
+              </a>
 
               <button 
                 onClick={() => setIsLibraryOpen(true)}

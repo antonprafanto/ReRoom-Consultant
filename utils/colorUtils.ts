@@ -54,7 +54,7 @@ export const extractPalette = async (imageSrc: string): Promise<string[]> => {
     }
 
     for (const [key] of sorted) {
-        if (palette.length >= 5) break;
+        if (palette.length >= 8) break; // Increased limit to 8 colors
         
         const [r, g, b] = key.split(',').map(Number);
         // Ensure values are within 0-255 range
@@ -66,7 +66,8 @@ export const extractPalette = async (imageSrc: string): Promise<string[]> => {
         // Check difference from existing selected colors to ensure variety
         let isDistinct = true;
         for (const existing of palette) {
-            if (getDist(existing, hex) < 60) { // Threshold for "too similar"
+            // Lowered threshold slightly (60 -> 45) to allow more nuances while avoiding duplicates
+            if (getDist(existing, hex) < 45) { 
                 isDistinct = false;
                 break;
             }
